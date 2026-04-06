@@ -8,12 +8,14 @@ import type { Message as Msg } from '../types.js';
 interface Props {
   messages: Msg[];
   isLoading: boolean;
+  /** Optional label override for the spinner (e.g. agentic tool status). */
+  spinnerLabel?: string;
 }
 
 const EMPTY_HINT = `  Type a message and press Enter to search with Perplexity.
   Press ${'\x1b[1m'}/\x1b[0m to choose a Search Mode, ${'\x1b[1m'}Ctrl+M\x1b[0m to switch models.`;
 
-export function MessageList({ messages, isLoading }: Props) {
+export function MessageList({ messages, isLoading, spinnerLabel }: Props) {
   const cols = process.stdout.columns || 80;
 
   if (messages.length === 0 && !isLoading) {
@@ -35,7 +37,7 @@ export function MessageList({ messages, isLoading }: Props) {
       ))}
       {isLoading && (
         <Box paddingX={2} marginTop={1}>
-          <Spinner />
+          <Spinner label={spinnerLabel} />
         </Box>
       )}
     </Box>

@@ -29,6 +29,12 @@ export interface SearchMode {
 export interface AskOptions {
   model?: string;
   mode?: string;
+  /**
+   * Called each time the agentic loop executes a tool autonomously.
+   * @param iteration  1-based loop count (max 4)
+   * @param command    The shell command being run
+   */
+  onAgentLoop?: (iteration: number, command: string) => void;
 }
 
 export type Overlay = 'model' | 'mode' | null;

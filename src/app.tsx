@@ -28,6 +28,8 @@ export function App({ initialPrompt }: Props) {
   const [isLoading, setIsLoading]     = useState(false);
   const [overlay, setOverlay]         = useState<Overlay>(null);
   const [error, setError]             = useState<string | null>(null);
+  /** Live status label shown in the spinner during agentic tool loops. */
+  const [agentStatus, setAgentStatus] = useState<string | null>(null);
 
   const savedModelId = config.get('defaultModel');
   const [currentModel, setCurrentModel] = useState<Model>(
@@ -180,6 +182,9 @@ export function App({ initialPrompt }: Props) {
       const raw = await browser.current.ask(text, {
         model: modelName,
         mode: modeId,
+        onAgentLoop: (iteration, command) => {
+          setAgentStatus(`⚡ Tool ${iteration}/${4}: ${command}`);
+        },
       });
 
       const aiMsg: Message = {
@@ -195,6 +200,7 @@ export function App({ initialPrompt }: Props) {
       setError(e instanceof Error ? e.message : String(e));
     } finally {
       setIsLoading(false);
+      setAgentStatus(null);
     }
   }
 
@@ -254,7 +260,7 @@ export function App({ initialPrompt }: Props) {
         </Box>
       );
     }
-    return <MessageList messages={messages} isLoading={isLoading} />;
+    return <MessageList messages={messages} isLoading={isLoading} spinnerLabel={agentStatus ?? undefined} />;
   };
 
   return (
