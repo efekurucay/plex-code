@@ -36,10 +36,18 @@ export class PerplexityBrowser {
     fs.mkdirSync(PLEX_DIR, { recursive: true });
     const runHeadless = headless ?? this.hasSession();
 
-    this.browser = await chromium.launch({
+    const launchOpts = {
       headless: runHeadless,
       args: ['--no-sandbox', '--disable-dev-shm-usage', '--disable-blink-features=AutomationControlled'],
-    });
+    };
+
+    try {
+      // Trying local Chrome first avoids Cloudflare blocking automated browsers
+      this.browser = await chromium.launch({ ...launchOpts, channel: 'chrome' });
+    } catch {
+      // Fallback to bundled chromium
+      this.browser = await chromium.launch(launchOpts);
+    }
 
     const ctxOpts: Record<string, unknown> = {
       viewport: { width: 1280, height: 900 },
