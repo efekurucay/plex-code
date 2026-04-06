@@ -40,10 +40,23 @@ export function App({ initialPrompt }: Props) {
 
   const browser = useRef<PerplexityBrowser | null>(null);
 
+  const doExit = () => {
+    if (browser.current) {
+      // Force exit after browser stops
+      void browser.current.stop().finally(() => {
+        exit();
+        process.exit(0);
+      });
+    } else {
+      exit();
+      process.exit(0);
+    }
+  };
+
   // Global shortcuts
   useInput((_char, key) => {
     // Quit on Ctrl+C when no overlay active
-    if (key.ctrl && _char === 'c') exit();
+    if (key.ctrl && _char === 'c') doExit();
     
     // Interrupt AI generation on Escape
     if (key.escape && isLoading && browser.current) {
@@ -93,9 +106,10 @@ export function App({ initialPrompt }: Props) {
         setMessages([]);
         void browser.current?.newChat();
         return true;
-      case '/quit':   exit();               return true;
+      case '/quit':   doExit();             return true;
       case '/logout': void handleLogout();  return true;
       case '/help': {
+
         const helpMsg: Message = {
           id: crypto.randomUUID(),
           role: 'assistant',
