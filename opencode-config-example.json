@@ -1,0 +1,22 @@
+{
+  "providers": {
+    "perplexity-proxy": {
+      "name": "Perplexity (via proxy)",
+      "apiKey": "not-needed",
+      "models": [
+        {
+          "name": "perplexity-web",
+          "id": "perplexity-web",
+          "attachment": false,
+          "reasoning": false
+        }
+      ]
+    }
+  },
+  "agents": {
+    "coder": {
+      "model": "perplexity-proxy/perplexity-web",
+      "maxTokens": 16000
+    }
+  }
+}
