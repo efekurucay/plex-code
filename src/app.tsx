@@ -40,9 +40,15 @@ export function App({ initialPrompt }: Props) {
 
   const browser = useRef<PerplexityBrowser | null>(null);
 
-  // Quit on Ctrl+C when no overlay active
+  // Global shortcuts
   useInput((_char, key) => {
+    // Quit on Ctrl+C when no overlay active
     if (key.ctrl && _char === 'c') exit();
+    
+    // Interrupt AI generation on Escape
+    if (key.escape && isLoading && browser.current) {
+      browser.current.interrupt();
+    }
   });
 
   // Init browser on mount
@@ -77,7 +83,68 @@ export function App({ initialPrompt }: Props) {
     setScreen('chat');
   }
 
+  // ── Slash commands ─────────────────────────────────────────────────────
+  function handleSlashCommand(cmd: string): boolean {
+    switch (cmd.toLowerCase().trim()) {
+      case '/mode':   setOverlay('mode');   return true;
+      case '/model':  setOverlay('model');  return true;
+      case '/login':  void handleLoginPrompt(); return true;
+      case '/new':
+        setMessages([]);
+        void browser.current?.newChat();
+        return true;
+      case '/quit':   exit();               return true;
+      case '/logout': void handleLogout();  return true;
+      case '/help': {
+        const helpMsg: Message = {
+          id: crypto.randomUUID(),
+          role: 'assistant',
+          content: [
+            '**PlexCode slash commands**',
+            '',
+            '`/mode`    — Change search mode (Deep Research, Create, etc.)',
+            '`/model`   — Switch AI model (Sonar, GPT-5.4, Claude, etc.)',
+            '`/new`     — Start a new conversation',
+            '`/logout`  — Clear session and log out of Perplexity',
+            '`/quit`    — Exit plexcode',
+            '`/help`    — Show this message',
+          ].join('\n'),
+          timestamp: new Date(),
+        };
+        setMessages((m) => [...m, helpMsg]);
+        return true;
+      }
+      default: return false;
+    }
+  }
+
+  async function handleLogout() {
+    const { default: fs } = await import('fs');
+    const { default: path } = await import('path');
+    const { default: os } = await import('os');
+    const sessionFile = path.join(os.homedir(), '.plexcode', 'session.json');
+    if (fs.existsSync(sessionFile)) fs.unlinkSync(sessionFile);
+    exit();
+  }
+
+  async function handleLoginPrompt() {
+    // Restart browser in visible mode for login
+    if (browser.current) await browser.current.stop();
+    setScreen('loading');
+    
+    const b = new PerplexityBrowser();
+    browser.current = b;
+    await b.start(false);
+    setScreen('login');
+  }
+
   async function handleAsk(text: string) {
+    // Route slash commands
+    if (text.startsWith('/')) {
+      handleSlashCommand(text);
+      return;
+    }
+
     if (!browser.current || isLoading) return;
 
     const userMsg: Message = {
@@ -147,13 +214,11 @@ export function App({ initialPrompt }: Props) {
     );
   }
 
-  return (
-    <Box flexDirection="column" height={process.stdout.rows}>
-      <Header model={currentModel} mode={currentMode} />
-
-      {/* Overlays */}
-      {overlay === 'model' && (
-        <Box position="absolute" marginX={2} marginY={2}>
+  // ── Main content area: overlay OR chat ──────────────────────────────────
+  const mainContent = () => {
+    if (overlay === 'model') {
+      return (
+        <Box flexGrow={1} flexDirection="column" paddingX={2} paddingY={1}>
           <ModelPicker
             models={MODELS}
             current={currentModel}
@@ -161,9 +226,11 @@ export function App({ initialPrompt }: Props) {
             onCancel={() => setOverlay(null)}
           />
         </Box>
-      )}
-      {overlay === 'mode' && (
-        <Box position="absolute" marginX={2} marginY={2}>
+      );
+    }
+    if (overlay === 'mode') {
+      return (
+        <Box flexGrow={1} flexDirection="column" paddingX={2} paddingY={1}>
           <ModePicker
             modes={MODES}
             current={currentMode}
@@ -171,12 +238,18 @@ export function App({ initialPrompt }: Props) {
             onCancel={() => setOverlay(null)}
           />
         </Box>
-      )}
+      );
+    }
+    return <MessageList messages={messages} isLoading={isLoading} />;
+  };
 
-      {/* Chat area */}
-      <MessageList messages={messages} isLoading={isLoading} />
+  return (
+    <Box flexDirection="column" height={process.stdout.rows}>
+      <Header model={currentModel} mode={currentMode} />
 
-      {error && (
+      {mainContent()}
+
+      {error && !overlay && (
         <Box paddingX={2}>
           <Text color={theme.error}>✖ {error}</Text>
         </Box>
@@ -184,9 +257,6 @@ export function App({ initialPrompt }: Props) {
 
       <InputArea
         onSubmit={handleAsk}
-        onModeOpen={() => setOverlay('mode')}
-        onModelOpen={() => setOverlay('model')}
-        onNewChat={() => setMessages([])}
         isDisabled={isLoading || overlay !== null}
       />
       <StatusBar />

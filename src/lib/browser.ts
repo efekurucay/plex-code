@@ -26,6 +26,7 @@ export class PerplexityBrowser {
   private browser: Browser | null = null;
   private context: BrowserContext | null = null;
   private page: Page | null = null;
+  private _interrupted = false;
 
   hasSession(): boolean {
     return fs.existsSync(SESSION_FILE);
@@ -62,10 +63,23 @@ export class PerplexityBrowser {
     await this.context!.storageState({ path: SESSION_FILE });
   }
 
+  async newChat(): Promise<void> {
+    if (!this.page) return;
+    await this.page.goto(BASE_URL, { waitUntil: 'domcontentloaded' });
+    await this.page.waitForTimeout(2000);
+  }
+
+  interrupt(): void {
+    this._interrupted = true;
+  }
+
   async ask(prompt: string, opts: AskOptions = {}): Promise<string> {
     const page = this.page!;
-    await page.goto(BASE_URL, { waitUntil: 'domcontentloaded' });
-    await page.waitForTimeout(2000);
+    this._interrupted = false;
+
+    // We no longer goto BASE_URL here to maintain the same thread.
+    // Ensure we are ready
+    await page.waitForTimeout(500);
 
     if (opts.mode && opts.mode !== 'default') {
       await this._selectMode(page, opts.mode);
@@ -145,6 +159,14 @@ export class PerplexityBrowser {
     const stopSel = "button[aria-label*='stop' i], button[aria-label*='cancel' i]";
     const deadline = Date.now() + timeoutMs;
     while (Date.now() < deadline) {
+      if (this._interrupted) {
+        this._interrupted = false;
+        try {
+          await page.click(stopSel, { timeout: 1000 });
+        } catch { /* ignore if already stopped */ }
+        break;
+      }
+      
       if ((await page.locator(stopSel).count()) === 0) {
         await page.waitForTimeout(800);
         break;
@@ -159,9 +181,9 @@ export class PerplexityBrowser {
       try {
         const els = await page.$$(sel);
         if (els.length) {
-          const chunks = await Promise.all(els.map((el) => el.innerText()));
-          const text = chunks.filter((t) => t.trim()).join('\n');
-          if (text) return text;
+          // Getting only the last block to support continuing threads
+          const text = await els[els.length - 1].innerText();
+          if (text && text.trim()) return text.trim();
         }
       } catch { /* try next */ }
     }
