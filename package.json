@@ -1,0 +1,38 @@
+{
+  "name": "plexcode",
+  "version": "0.1.0",
+  "description": "Perplexity AI terminal assistant — CLI coding and research tool",
+  "keywords": ["perplexity", "ai", "cli", "tui", "terminal", "research", "assistant"],
+  "license": "MIT",
+  "type": "module",
+  "bin": {
+    "plexcode": "./dist/cli.js"
+  },
+  "scripts": {
+    "build": "tsc && node scripts/fixup.js",
+    "dev": "tsx src/cli.tsx",
+    "prepublishOnly": "npm run build",
+    "postinstall": "node scripts/postinstall.js"
+  },
+  "dependencies": {
+    "chalk": "^5.3.0",
+    "commander": "^12.1.0",
+    "conf": "^13.0.1",
+    "ink": "^5.1.0",
+    "playwright": "^1.43.0",
+    "react": "^18.3.1"
+  },
+  "devDependencies": {
+    "@types/node": "^20.14.0",
+    "@types/react": "^18.3.1",
+    "tsx": "^4.15.7",
+    "typescript": "^5.5.0"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/efekurucay/plex-code.git"
+  }
+}

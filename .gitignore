@@ -1,0 +1,17 @@
+# Node
+node_modules/
+dist/
+
+# Logs
+*.log
+npm-debug.log*
+
+# OS
+.DS_Store
+
+# Editor
+.vscode/
+.idea/
+
+# PlexCode runtime
+~/.plexcode/
