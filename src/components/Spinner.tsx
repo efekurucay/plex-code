@@ -1,9 +1,22 @@
 import React, { useState, useEffect } from 'react';
 import { Box, Text } from 'ink';
 
-// 1. Define custom symmetric frames resembling the Perplexity asterisk
-const BASE_FRAMES = ['·', '✢', '✳', '✶', '✻', '✽'];
-const SPINNER_FRAMES = [...BASE_FRAMES, ...[...BASE_FRAMES].reverse()];
+// 1. Define custom symmetric frames resembling the Perplexity logo's expansion
+// The animation starts as a vertical line, expands into chevrons, then brackets, exactly mimicking the Lottie morph.
+const SPINNER_FRAMES = [
+  " │ ",
+  " ┼ ",
+  " ╪ ",
+  "»╪«",
+  "⟩╪⟨",
+  "]╪[",
+  "⟦╪⟧",
+  "]╪[",
+  "⟩╪⟨",
+  "»╪«",
+  " ╪ ",
+  " ┼ "
+];
 
 interface RGB { r: number; g: number; b: number; }
 
