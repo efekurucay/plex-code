@@ -30,6 +30,8 @@ export function App({ initialPrompt }: Props) {
   const [error, setError]             = useState<string | null>(null);
   /** Live status label shown in the spinner during agentic tool loops. */
   const [agentStatus, setAgentStatus] = useState<string | null>(null);
+  /** When true, the shadow agentic loop is active (inject preamble + run tools). */
+  const [isAgenticMode, setIsAgenticMode] = useState(false);
 
   const savedModelId = config.get('defaultModel');
   const [currentModel, setCurrentModel] = useState<Model>(
@@ -98,7 +100,7 @@ export function App({ initialPrompt }: Props) {
     setScreen('chat');
   }
 
-  // ── Slash commands ─────────────────────────────────────────────────────
+  // ── Slash commands ──────────────────────────────────────────────────────
   function handleSlashCommand(cmd: string): boolean {
     switch (cmd.toLowerCase().trim()) {
       case '/mode':   setOverlay('mode');   return true;
@@ -110,6 +112,24 @@ export function App({ initialPrompt }: Props) {
         return true;
       case '/quit':   doExit();             return true;
       case '/logout': void handleLogout();  return true;
+      case '/agent': {
+        const next = !isAgenticMode;
+        setIsAgenticMode(next);
+        // Reset preamble flag so it re-injects on the next message of this thread
+        if (next) browser.current?.resetPreamble?.();
+        setMessages((m) => [
+          ...m,
+          {
+            id: crypto.randomUUID(),
+            role: 'assistant' as const,
+            content: next
+              ? '⚡ **Agentic mode ON** — I can now read your local files.\n`/agent` again to disable.'
+              : '○ **Agentic mode OFF** — Returning to standard Perplexity search.',
+            timestamp: new Date(),
+          },
+        ]);
+        return true;
+      }
       case '/help': {
 
         const helpMsg: Message = {
@@ -120,6 +140,7 @@ export function App({ initialPrompt }: Props) {
             '',
             '`/mode`    — Change search mode (Deep Research, Create, etc.)',
             '`/model`   — Switch AI model (Sonar, GPT-5.4, Claude, etc.)',
+            '`/agent`   — Toggle agentic mode (local file access via tools)',
             '`/new`     — Start a new conversation',
             '`/logout`  — Clear session and log out of Perplexity',
             '`/quit`    — Exit plexcode',
@@ -182,8 +203,9 @@ export function App({ initialPrompt }: Props) {
       const raw = await browser.current.ask(text, {
         model: modelName,
         mode: modeId,
+        agenticMode: isAgenticMode,
         onAgentLoop: (iteration, command) => {
-          setAgentStatus(`⚡ Tool ${iteration}/${4}: ${command}`);
+          setAgentStatus(`⚡ Tool ${iteration}/4: ${command}`);
         },
       });
 

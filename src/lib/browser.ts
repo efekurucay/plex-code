@@ -116,6 +116,11 @@ export class PerplexityBrowser {
     this._interrupted = true;
   }
 
+  /** Reset the preamble injection flag (e.g. when /agent is toggled on mid-thread). */
+  resetPreamble(): void {
+    this._preambleInjected = false;
+  }
+
   // ── Public API ─────────────────────────────────────────────────────────────
 
   /**
@@ -132,11 +137,17 @@ export class PerplexityBrowser {
     const page = this.page!;
     this._interrupted = false;
 
-    // ── 1. Build the augmented prompt (inject preamble once per thread) ──────
-    const augmented = this._preambleInjected
-      ? prompt
-      : AGENT_PREAMBLE + prompt;
-    this._preambleInjected = true;
+    // ── 1. Build the augmented prompt ────────────────────────────────────────
+    // Preamble is only injected when agenticMode is explicitly requested.
+    // This prevents casual messages ("merhaba") from triggering irrelevant
+    // web searches caused by the [System] block in the prompt.
+    let augmented = prompt;
+    if (opts.agenticMode) {
+      if (!this._preambleInjected) {
+        augmented = AGENT_PREAMBLE + prompt;
+        this._preambleInjected = true;
+      }
+    }
 
     if (opts.mode && opts.mode !== 'default') {
       await this._selectMode(page, opts.mode);

@@ -30,6 +30,11 @@ export interface AskOptions {
   model?: string;
   mode?: string;
   /**
+   * When true: inject the agentic tool-use preamble and run the shadow loop.
+   * When false (default): plain Perplexity query, no preamble injected.
+   */
+  agenticMode?: boolean;
+  /**
    * Called each time the agentic loop executes a tool autonomously.
    * @param iteration  1-based loop count (max 4)
    * @param command    The shell command being run

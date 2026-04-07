@@ -13,16 +13,20 @@ export function Message({ message }: Props) {
 
   if (isUser) {
     return (
-      <Box marginY={0} paddingX={1} flexDirection="column">
+      <Box marginTop={1} marginBottom={0} paddingX={1} flexDirection="column">
         <Box>
           <Text color={theme.user} bold>❯ </Text>
-          <Text color={theme.user}>{message.content}</Text>
+          <Text color={theme.user} wrap="wrap">{message.content}</Text>
         </Box>
       </Box>
     );
   }
 
   const rendered = renderMarkdown(message.content);
+  // Split into lines and render each as its own <Text> block.
+  // This prevents Ink from treating one giant string as a single flow element,
+  // which causes lines to bleed into each other when the terminal wraps them.
+  const lines = rendered.split('\n');
 
   return (
     <Box marginY={1} paddingX={1} flexDirection="column">
@@ -42,9 +46,11 @@ export function Message({ message }: Props) {
         )}
       </Box>
 
-      {/* Response body */}
-      <Box paddingLeft={2}>
-        <Text>{rendered}</Text>
+      {/* Response body — one <Text> per line to avoid wrap bleed */}
+      <Box paddingLeft={2} flexDirection="column">
+        {lines.map((line, i) => (
+          <Text key={i} wrap="wrap">{line}</Text>
+        ))}
       </Box>
     </Box>
   );
