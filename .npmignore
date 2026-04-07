@@ -1,0 +1,8 @@
+# Source files — only dist/ is needed by consumers
+src/
+tsconfig.json
+.gitignore
+
+# Dev / CI artifacts
+*.log
+.env*
