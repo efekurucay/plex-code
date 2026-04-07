@@ -13,7 +13,7 @@ interface Props {
 }
 
 const EMPTY_HINT = `  Type a message and press Enter to search with Perplexity.
-  Press ${'\x1b[1m'}/\x1b[0m to choose a Search Mode, ${'\x1b[1m'}Ctrl+M\x1b[0m to switch models.`;
+  Press ${'\x1b[1m'}/\x1b[0m for commands  ·  ${'\x1b[1m'}/agent\x1b[0m to enable codebase mode  ·  ${'\x1b[1m'}Ctrl+M\x1b[0m for models.`;
 
 export function MessageList({ messages, isLoading, spinnerLabel }: Props) {
   const cols = process.stdout.columns || 80;
